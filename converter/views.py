@@ -38,10 +38,12 @@ def convert(request):
             if conversion_type == 'word_to_pdf':
                 import subprocess
                 output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
-                subprocess.run([
+                result = subprocess.run([
                     'libreoffice', '--headless', '--convert-to', 'pdf',
                     '--outdir', output_dir, upload_path
-                ])
+                ], capture_output=True, text=True)
+                if result.returncode != 0:
+                    raise Exception(f"LibreOffice error: {result.stderr}")
 
             # Text to Word
             elif conversion_type == 'text_to_word':
