@@ -35,24 +35,11 @@ def convert(request):
 
         try:
             # Word to PDF
-          if conversion_type == 'word_to_pdf':
-            import subprocess
-            import shutil
-            output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
-            
-            # Find libreoffice wherever it is
-            libreoffice_path = shutil.which('libreoffice') or shutil.which('soffice')
-            
-            if not libreoffice_path:
-                raise Exception("LibreOffice is not installed on this server")
-            
-            result = subprocess.run([
-                libreoffice_path, '--headless', '--convert-to', 'pdf',
-                '--outdir', output_dir, upload_path
-            ], capture_output=True, text=True)
-            
-            if result.returncode != 0:
-                raise Exception(f"LibreOffice error: {result.stderr}")
+            if conversion_type == 'word_to_pdf':
+                import aspose.words as aw
+                output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
+                doc = aw.Document(upload_path)
+                doc.save(output_path)
 
             # Text to Word
             elif conversion_type == 'text_to_word':
