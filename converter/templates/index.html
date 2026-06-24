@@ -251,11 +251,65 @@
     });
   });
 
-  // Loading state on submit
-  document.querySelector('form').addEventListener('submit', function() {
+  // AJAX form submission
+  document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Stop normal page reload
+
     const btn = document.querySelector('.convert-btn');
-    btn.textContent = '⏳ Converting...';
+    btn.textContent = ' Converting... hold on for a moment';
     btn.disabled = true;
+
+    const formData = new FormData(this);
+
+    fetch('/convert/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        // Trigger file download
+        return response.blob().then(blob => {
+          const contentDisposition = response.headers.get('Content-Disposition');
+          let filename = 'converted_file';
+
+          if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?([^"]+)"?/);
+            if (match) filename = match[1];
+          }
+
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        });
+      } else {
+        return response.text().then(html => {
+          // Show error without reloading
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const error = doc.querySelector('.error');
+          const existing = document.querySelector('.error');
+          if (existing) existing.remove();
+          if (error) {
+            document.querySelector('.card').insertBefore(error, document.querySelector('.conversion-options'));
+          }
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Error:', err);
+    })
+    .finally(() => {
+      btn.textContent = '⚙️ CONVERT & DOWNLOAD';
+      btn.disabled = false;
+    });
   });
 </script>
 </body>
