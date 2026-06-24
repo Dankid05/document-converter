@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Document Converter</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 550px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 35px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 35px;
+    }
+
+    /* Conversion Type Selector */
+    .conversion-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .option:hover {
+      border-color: #e94560;
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    .option input[type="radio"] {
+      accent-color: #e94560;
+      width: 18px;
+      height: 18px;
+    }
+
+    .option i {
+      font-size: 1.2rem;
+      color: #e94560;
+      width: 20px;
+    }
+
+    .option span {
+      font-size: 0.95rem;
+    }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .upload-area:hover {
+      border-color: #e94560;
+      background: rgba(233, 69, 96, 0.05);
+    }
+
+    .upload-area i {
+      font-size: 2.5rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 10px;
+    }
+
+    .upload-area p {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.9rem;
+    }
+
+    .upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    #file-name {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #e94560;
+      min-height: 20px;
+    }
+
+    /* Convert Button */
+    .convert-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      background: #e94560;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+      letter-spacing: 1px;
+    }
+
+    .convert-btn:hover { background: #c73652; }
+
+    /* Error */
+    .error {
+      background: rgba(233, 69, 96, 0.2);
+      border: 1px solid #e94560;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      color: #ff6b81;
+      font-size: 0.9rem;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📄 Document Converter</h1>
+  <p class="subtitle">Convert your files instantly, no sign up needed</p>
+
+  <div class="card">
+
+    {% if error %}
+      <div class="error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/convert/" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Conversion Type -->
+      <div class="conversion-options">
+        <label class="option">
+          <input type="radio" name="conversion_type" value="word_to_pdf" required/>
+          <i class="fa fa-file-pdf"></i>
+          <span>Word → PDF</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="conversion_type" value="text_to_word"/>
+          <i class="fa fa-file-word"></i>
+          <span>Text → Word</span>
+        </label>
+        <label class="option">
+          <input type="radio" name="conversion_type" value="pdf_to_word"/>
+          <i class="fa fa-file-alt"></i>
+          <span>PDF → Word</span>
+        </label>
+      </div>
+
+      <!-- Upload Area -->
+      <div class="upload-area">
+        <i class="fa fa-cloud-upload-alt"></i>
+        <p>Click or drag & drop your file here</p>
+        <p id="file-name">No file chosen</p>
+        <input type="file" name="file" id="file-input" accept=".docx,.txt,.pdf"/>
+      </div>
+
+      <!-- Type Text Area (shows only for Text → Word) -->
+      <div id="text-input-area" style="display:none; margin-bottom: 20px;">
+        <p style="margin-bottom: 10px; color: rgba(255,255,255,0.6); font-size: 0.9rem;">✏️ Or type your text directly:</p>
+        <textarea
+          name="typed_text"
+          placeholder="Type your content here..."
+          rows="6"
+          style="
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 0.95rem;
+            resize: vertical;
+            outline: none;
+            font-family: 'Segoe UI', sans-serif;
+          "
+        ></textarea>
+      </div>
+      <button type="submit" class="convert-btn">
+        ⚙️ CONVERT & DOWNLOAD
+      </button>
+    </form>
+
+  </div>
+</div>
+
+
+
+<script>
+  // Show file name when selected
+  document.getElementById('file-input').addEventListener('change', function() {
+    const name = this.files[0] ? this.files[0].name : 'No file chosen';
+    document.getElementById('file-name').textContent = name;
+  });
+
+  // Show text area only when Text → Word is selected
+  document.querySelectorAll('input[name="conversion_type"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      const textArea = document.getElementById('text-input-area');
+      textArea.style.display = this.value === 'text_to_word' ? 'block' : 'none';
+    });
+  });
+
+  // Loading state on submit
+  document.querySelector('form').addEventListener('submit', function() {
+    const btn = document.querySelector('.convert-btn');
+    btn.textContent = '⏳ Converting...';
+    btn.disabled = true;
+  });
+</script>
+</body>
+</html>
