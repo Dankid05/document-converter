@@ -35,13 +35,22 @@ def convert(request):
 
         try:
             # Word to PDF
-           if conversion_type == 'word_to_pdf':
+          if conversion_type == 'word_to_pdf':
             import subprocess
+            import shutil
             output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
+            
+            # Find libreoffice wherever it is
+            libreoffice_path = shutil.which('libreoffice') or shutil.which('soffice')
+            
+            if not libreoffice_path:
+                raise Exception("LibreOffice is not installed on this server")
+            
             result = subprocess.run([
-                '/usr/bin/libreoffice', '--headless', '--convert-to', 'pdf',
+                libreoffice_path, '--headless', '--convert-to', 'pdf',
                 '--outdir', output_dir, upload_path
             ], capture_output=True, text=True)
+            
             if result.returncode != 0:
                 raise Exception(f"LibreOffice error: {result.stderr}")
 
@@ -81,4 +90,4 @@ def convert(request):
         except Exception as e:
             return render(request, 'index.html', {'error': f'Conversion failed: {str(e)}'})
 
-    return render(request, 'index.html', {'error': 'Invalid request!'})
+    return render(request, 'index.html')

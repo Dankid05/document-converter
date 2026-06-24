@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["libreoffice-still", "openjdk11"]
+nixPkgs = ["libreoffice-still", "openjdk11", "which"]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
