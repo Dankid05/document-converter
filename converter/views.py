@@ -36,9 +36,12 @@ def convert(request):
         try:
             # Word to PDF
             if conversion_type == 'word_to_pdf':
-                from docx2pdf import convert as docx2pdf_convert
+                import subprocess
                 output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
-                docx2pdf_convert(upload_path, output_path)
+                subprocess.run([
+                    'libreoffice', '--headless', '--convert-to', 'pdf',
+                    '--outdir', output_dir, upload_path
+                ])
 
             # Text to Word
             elif conversion_type == 'text_to_word':
