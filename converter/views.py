@@ -40,6 +40,9 @@ def convert(request):
                 output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
                 doc = aw.Document(upload_path)
                 doc.save(output_path)
+                
+                if not os.path.exists(output_path):
+                    raise Exception("PDF file was not created")
 
             # Text to Word
             elif conversion_type == 'text_to_word':
@@ -68,11 +71,13 @@ def convert(request):
                 cv.close()
 
             if output_path and os.path.exists(output_path):
-                return FileResponse(
+                response = FileResponse(
                     open(output_path, 'rb'),
                     as_attachment=True,
                     filename=os.path.basename(output_path)
                 )
+                response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+                return response
 
         except Exception as e:
             return render(request, 'index.html', {'error': f'Conversion failed: {str(e)}'})
