@@ -36,22 +36,25 @@ def convert(request):
         try:
             # Word to PDF
             if conversion_type == 'word_to_pdf':
-                import subprocess
-                import shutil
+                from docx import Document as DocxDocument
+                from reportlab.lib.pagesizes import letter
+                from reportlab.pdfgen import canvas
                 output_path = os.path.join(output_dir, file.name.replace('.docx', '.pdf'))
+                doc = DocxDocument(upload_path)
                 
-                libreoffice_path = shutil.which('libreoffice') or shutil.which('soffice')
+                c = canvas.Canvas(output_path, pagesize=letter)
+                width, height = letter
+                y = height - 50
                 
-                if not libreoffice_path:
-                    raise Exception("LibreOffice is not installed on this server")
+                for para in doc.paragraphs:
+                    if para.text.strip():
+                        c.drawString(50, y, para.text)
+                        y -= 20
+                        if y < 50:
+                            c.showPage()
+                            y = height - 50
                 
-                result = subprocess.run([
-                    libreoffice_path, '--headless', '--convert-to', 'pdf',
-                    '--outdir', output_dir, upload_path
-                ], capture_output=True, text=True)
-                
-                if result.returncode != 0:
-                    raise Exception(f"LibreOffice error: {result.stderr}")
+                c.save()
             # Text to Word
             elif conversion_type == 'text_to_word':
                 from docx import Document
