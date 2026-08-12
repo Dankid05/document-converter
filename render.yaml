@@ -2,7 +2,7 @@ services:
   - type: web
     name: document-converter
     env: python
-    buildCommand: "apt-get install -y libreoffice && pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
     startCommand: "gunicorn core.wsgi --log-file -"
     envVars:
       - key: SECRET_KEY
